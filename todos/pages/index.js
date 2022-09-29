@@ -27,6 +27,7 @@ export default function App() {
   const [initDB, setInitDB] = useState(false);
   let task = useRef();
   const tabs = isNil(user) ? ["All"] : ["All", "Yours"];
+  const [button, setButton] = useState(true);
 
   const setupWeaveDB = async () => {
     window.Buffer = Buffer;
@@ -89,7 +90,9 @@ export default function App() {
     await db.delete("tasks", id, user);
     await getTasks();
   };
-
+  const changeWord = () => {
+    setButton(!button);
+  };
   const login = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     await provider.send("eth_requestAccounts", []);
@@ -107,6 +110,8 @@ export default function App() {
         wallet: wallet_address,
         privateKey: identity.privateKey,
       });
+      changeWord();
+
       return;
     }
     if (!isNil(tx) && isNil(tx.err)) {
@@ -130,6 +135,7 @@ export default function App() {
     if (confirm("Would you like to sign out?")) {
       await lf.removeItem("temp_address:current");
       setUser(null, "temp_current");
+      changeWord();
       console.log("ログアウト成功");
     } else {
       console.log("ログアウト失敗");
@@ -272,13 +278,17 @@ export default function App() {
       </Flex>
     </Flex>
   );
-  const [button, setButton] = useState(true);
-  const chhangeWord = () => {
-    setButton(!button);
-  };
-  const loginStatus = () => {
+
+  const loginStatus = async () => {
     {
-      !isNil(user) ? logout() : login();
+      if (!isNil(user)) {
+        logout();
+        console.log("logout");
+        console.log(user.wallet.slice(0, 7));
+      } else {
+        login();
+        console.log("login");
+      }
     }
   };
 
@@ -318,12 +328,11 @@ export default function App() {
             <div className="flex justify-center">
               <button
                 onClick={() => {
-                  chhangeWord();
                   loginStatus();
                 }}
                 className="btn"
               >
-                {button ? "ボタンを切り替える前" : "ボタンを切り替えた後"}
+                {button ? "ボタンを切り替える前" : user.wallet.slice(0, 7)}
               </button>
             </div>
           </main>

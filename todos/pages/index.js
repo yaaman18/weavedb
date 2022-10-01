@@ -2,9 +2,9 @@ import { useRef, useState, useEffect } from "react";
 import lf from "localforage";
 import { divide, isNil, map } from "ramda";
 import SDK from "weavedb-sdk";
+import client from "weavedb-client";
 import { Buffer } from "buffer";
 import { ethers } from "ethers";
-import { Box, Flex, Input, ChakraProvider } from "@chakra-ui/react";
 
 let db;
 const contractTxId = "fhrDBPh8kN517SEWaVu9AomRwqukm0q6f8AbQhEQTn0";
@@ -111,7 +111,6 @@ export default function App() {
         privateKey: identity.privateKey,
       });
       changeWord();
-
       return;
     }
     if (!isNil(tx) && isNil(tx.err)) {
@@ -171,29 +170,6 @@ export default function App() {
     }
   }, [tab, initDB]);
 
-  const NavBar = () => (
-    <Flex p={3} position="fixed" w="100%" sx={{ top: 0, left: 0 }}>
-      <Box flex={1} />
-      <Flex
-        bg="#111"
-        color="white"
-        py={2}
-        px={6}
-        sx={{
-          borderRadius: "5px",
-          cursor: "pointer",
-          ":hover": { opacity: 0.75 },
-        }}
-      >
-        {!isNil(user) ? (
-          <Box onClick={() => logout()}>{user.wallet.slice(0, 7)}</Box>
-        ) : (
-          <Box onClick={() => login()}>Connect Wallet</Box>
-        )}
-      </Flex>
-    </Flex>
-  );
-
   const Tabs = () => (
     <Flex justify="center" style={{ display: "flex" }} mb={4}>
       {map((v) => (
@@ -207,75 +183,6 @@ export default function App() {
           {v}
         </Box>
       ))(tabs)}
-    </Flex>
-  );
-
-  const Tasks = () =>
-    map((v) => (
-      <Flex sx={{ border: "1px solid #ddd", borderRadius: "5px" }} p={3} my={1}>
-        <Box
-          w="30px"
-          textAlign="center"
-          sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
-        >
-          {v.data.done ? (
-            "✅"
-          ) : v.data.user_address !== user?.wallet.toLowerCase() ? null : (
-            <Box onClick={() => completeTask(v.id)}>⬜</Box>
-          )}
-        </Box>
-        <Box px={3} flex={1} style={{ marginLeft: "10px" }}>
-          {v.data.task}
-        </Box>
-        <Box w="100px" textAlign="center" style={{ marginLeft: "10px" }}>
-          {v.data.user_address.slice(0, 7)}
-        </Box>
-        <Box
-          w="50px"
-          textAlign="center"
-          sx={{ cursor: "pointer", ":hover": { opacity: 0.75 } }}
-        >
-          {v.data.user_address === user?.wallet.toLowerCase() ? (
-            <Box
-              style={{ marginLeft: "10px" }}
-              onClick={() => deleteTask(v.id)}
-            >
-              ❌
-            </Box>
-          ) : null}
-        </Box>
-      </Flex>
-    ))(tasks);
-
-  const NewTask = () => (
-    <Flex mb={4}>
-      <Input
-        placeholder="Enter New Task"
-        value={task.current}
-        onChange={(e) => {
-          task.current = e.target.value;
-        }}
-        sx={{ borderRadius: "5px 0 0 5px" }}
-      />
-      <Flex
-        bg="#111"
-        color="white"
-        py={2}
-        px={6}
-        sx={{
-          borderRadius: "0 5px 5px 0",
-          cursor: "pointer",
-          ":hover": { opacity: 0.75 },
-        }}
-        onClick={async () => {
-          if (!/^\s*$/.test(task.current)) {
-            await addTask(task.current);
-            task.current = "";
-          }
-        }}
-      >
-        add
-      </Flex>
     </Flex>
   );
 
@@ -317,14 +224,6 @@ export default function App() {
               </label>
             </div>
             <div className="mx-2 flex-1 justify-center px-2">Code Sundbox</div>
-          </div>
-          {/* <!-- Page content here --> */}
-          <main>
-            <h1 className="mt-32 flex justify-center text-3xl">Test Flight</h1>
-            <p
-              className="mt-8 flex justify-center break-words font-serif text-xl"
-              // style={{ writingMode: 'vertical-rl' }}
-            ></p>
             <div className="flex justify-center">
               <button
                 onClick={() => {
@@ -332,8 +231,82 @@ export default function App() {
                 }}
                 className="btn"
               >
-                {button ? "ボタンを切り替える前" : user.wallet.slice(0, 7)}
+                {button ? "connnect wallet" : user.wallet.slice(0, 7)}
               </button>
+            </div>
+          </div>
+          {/* <!-- Page content here --> */}
+          <main>
+            <h1 className="mt-32 flex justify-center text-3xl">Test Flight</h1>
+            <p className="mt-8 flex justify-center break-words  text-xl">
+              please write something
+            </p>
+            <div className="mt-10 flex justify-center">
+              <input
+                type="text"
+                placeholder="Type here"
+                value={task.current}
+                onChange={(e) => {
+                  task.current = e.target.value;
+                }}
+                className="input input-primary w-full  max-w-xs"
+              />
+              <button
+                onClick={async () => {
+                  if (!/^\s*$/.test(task.current)) {
+                    await addTask(task.current);
+                    task.current = "";
+                  }
+                }}
+                className="btn"
+              >
+                add text
+              </button>
+            </div>
+            {/* user soart */}
+            <div className="mt-8 mb-8 flex justify-center">
+              {map((v) => (
+                <button className="group-hover mr-2" onClick={() => setTab(v)}>
+                  {v}
+                </button>
+              ))(tabs)}
+            </div>
+
+            <div className="">
+              {map((v) => (
+                <div>
+                  <div className="my-4 flex justify-center">
+                    <div className=" cursor-pointer ">
+                      {v.data.done ? (
+                        "✅"
+                      ) : v.data.user_address !==
+                        user?.wallet.toLowerCase() ? null : (
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => completeTask(v.id)}
+                        >
+                          ⬜
+                        </div>
+                      )}
+                    </div>
+                    <div className="mr-4">
+                      {v.data.user_address.slice(0, 7)}
+                    </div>
+                    <div> {v.data.task} </div>
+                    <div className="group-hover flex justify-center">
+                      {v.data.user_address === user?.wallet.toLowerCase() ? (
+                        <div
+                          className="tooltip  tooltip-info ml-3 flex cursor-pointer justify-center"
+                          data-tip="クリックでタスクが消えます"
+                          onClick={() => deleteTask(v.id)}
+                        >
+                          ❌
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              ))(tasks)}
             </div>
           </main>
         </div>
